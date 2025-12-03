@@ -3,150 +3,210 @@ import { validationResult } from "express-validator";
 import User from "../models/User.js";
 import { generateToken } from "../utils/generateToken.js";
 import { formatValidationErrors } from "../utils/formatErrors.js";
+import Account from "../models/Account.js";
+
+
+
 
 export const register = async (req, res) => {
+  // -------------------- VALIDATE INPUT --------------------
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    const friendly = formatValidationErrors(errors.array());
-    return res.status(400).json({ errors: friendly });
+    const friendly = errors.array().map(e => e.msg);
+    return res.status(400).json({ error: friendly[0] });
   }
-  if (!errors.isEmpty()) {
-    console.log("VALIDATION ERRORS:", errors.array());
-    return res.status(400).json({ errors: errors.array() });
-}
-  if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
-console.log("REGISTER BODY:", req.body);
 
-  const {
-    personalInfo, contactDetail,
-    accountSetup, security
-  } = req.body;
+  console.log("REGISTER BODY:", req.body);
+
+  const { personalInfo, contactDetail, accountSetup, security } = req.body;
 
   try {
-    // uniqueness checks
-    const existingEmail = await User.findOne({ "contactDetail.email": contactDetail?.email });
-    if (existingEmail) return res.status(400).json({ error: "Email already in use" });
+    // -------------------- UNIQUENESS CHECKS --------------------
+    if (await User.findOne({ "contactDetail.email": contactDetail.email }))
+      return res.status(400).json({ error: "Email already in use" });
 
-    const existingPhone = await User.findOne({ "contactDetail.phone": contactDetail?.phone });
-    if (existingPhone) return res.status(400).json({ error: "Phone already in use" });
+    if (await User.findOne({ "contactDetail.phone": contactDetail.phone }))
+      return res.status(400).json({ error: "Phone already in use" });
 
-    const existingUsername = await User.findOne({ "personalInfo.username": personalInfo.username.toLowerCase() });
-    if (existingUsername) return res.status(400).json({ error: "Username already in use" });
+    if (await User.findOne({ "personalInfo.username": personalInfo.username.toLowerCase() }))
+      return res.status(400).json({ error: "Username already in use" });
 
-    // hash password & 4-digit transaction PIN
+    // -------------------- HASH PASSWORD + PIN --------------------
+    if (!accountSetup.transactionPin)
+      return res.status(400).json({ error: "Transaction PIN is required" });
+
     const passwordHash = await bcrypt.hash(security.password, 12);
     const pinHash = await bcrypt.hash(accountSetup.transactionPin, 12);
 
+    // -------------------- CREATE USER --------------------
     const user = await User.create({
       personalInfo: {
         legalFirstName: personalInfo.legalFirstName,
         middleName: personalInfo.middleName,
         legalLastName: personalInfo.legalLastName,
-        username: personalInfo.username.toLowerCase()
+        username: personalInfo.username.toLowerCase(),
       },
       contactDetail: {
-        email: contactDetail.email?.toLowerCase(),
+        email: contactDetail.email.toLowerCase(),
         phone: contactDetail.phone,
-        country: contactDetail.country
+        country: contactDetail.country,
       },
       accountSetup: {
         accountType: accountSetup.accountType,
-        transactionPinHash: pinHash
+        transactionPinHash: pinHash,
       },
       security: {
         passwordHash,
-        termsAcceptedAt: new Date()
-      }
+        termsAcceptedAt: new Date(),
+      },
     });
 
+    // -------------------- ACCOUNT NUMBER GENERATORS --------------------
+    function generateAccountNumber() {
+      return String(Math.floor(1000000000 + Math.random() * 9000000000));
+    }
+
+    function generateAccountId() {
+      return "UG-" + Date.now() + "-" + Math.floor(Math.random() * 99999);
+    }
+
+    // -------------------- CREATE BANK ACCOUNT --------------------
+    const account = await Account.create({
+      user: user._id,  // must match schema field name
+      accountNumber: generateAccountNumber(),
+      accountId: generateAccountId(),
+
+      balances: {
+        usd: { available: 0, ledger: 0 },
+        usdt: { available: 0, ledger: 0 },
+        btc: { available: 0, ledger: 0 },
+      },
+
+      limits: {},
+      analytics: {},
+    });
+
+    // -------------------- JWT TOKEN --------------------
     const token = generateToken({ userId: user._id });
-    res.status(201).json({
+
+    // -------------------- RESPONSE --------------------
+    return res.status(201).json({
       message: "Account created (pre-KYC).",
       token,
+      needsVerification: true,
       user: {
         id: user._id,
         username: user.personalInfo.username,
         email: user.contactDetail.email,
-        accountType: user.accountSetup.accountType
-      }
+        accountNumber: account.accountNumber, // NOW VALID
+        accountId: account.accountId,         // NOW VALID
+        accountType: user.accountSetup.accountType,
+      },
     });
+
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    console.error("REGISTER ERROR:", e);
+    return res.status(500).json({ error: e.message });
   }
 };
 // export const register = async (req, res) => {
-//   console.log("STEP 1: Entered register controller");
-
+//   // -------------------- VALIDATE INPUT ONCE --------------------
 //   const errors = validationResult(req);
-//   console.log("STEP 2: Validation errors:", errors.array());
-
 //   if (!errors.isEmpty()) {
-//     console.log("❌ VALIDATION FAILED — stopping request");
-//     return res.status(400).json({ errors: errors.array() });
+//     const friendly = errors.array().map(e => e.msg);
+//     return res.status(400).json({ error: friendly[0] });
 //   }
 
-//   console.log("STEP 3: Body after validation:", JSON.stringify(req.body, null, 2));
+//   console.log("REGISTER BODY:", req.body);
 
 //   const { personalInfo, contactDetail, accountSetup, security } = req.body;
 
-//   console.log("STEP 4: Extracted fields:");
-//   console.log("personalInfo:", personalInfo);
-//   console.log("contactDetail:", contactDetail);
-//   console.log("accountSetup:", accountSetup);
-//   console.log("security:", security);
-
 //   try {
-//     console.log("STEP 5: Checking email uniqueness:", contactDetail?.email);
+//     // -------------------- UNIQUENESS CHECKS --------------------
+//     if (await User.findOne({ "contactDetail.email": contactDetail.email }))
+//       return res.status(400).json({ error: "Email already in use" });
 
-//     const existingEmail = await User.findOne({ "contactDetail.email": contactDetail?.email });
-//     console.log("Existing email lookup:", existingEmail);
+//     if (await User.findOne({ "contactDetail.phone": contactDetail.phone }))
+//       return res.status(400).json({ error: "Phone already in use" });
 
-//     console.log("STEP 6: Hashing password & pin");
+//     if (await User.findOne({ "personalInfo.username": personalInfo.username.toLowerCase() }))
+//       return res.status(400).json({ error: "Username already in use" });
+
+//     // -------------------- HASH PASSWORD + PIN --------------------
+//     if (!accountSetup.transactionPin)
+//       return res.status(400).json({ error: "Transaction PIN is required" });
+
 //     const passwordHash = await bcrypt.hash(security.password, 12);
 //     const pinHash = await bcrypt.hash(accountSetup.transactionPin, 12);
 
-//     console.log("STEP 7: Creating user…");
+//     // -------------------- CREATE USER --------------------
 //     const user = await User.create({
 //       personalInfo: {
 //         legalFirstName: personalInfo.legalFirstName,
 //         middleName: personalInfo.middleName,
 //         legalLastName: personalInfo.legalLastName,
-//         username: personalInfo.username.toLowerCase()
+//         username: personalInfo.username.toLowerCase(),
 //       },
 //       contactDetail: {
-//         email: contactDetail.email?.toLowerCase(),
+//         email: contactDetail.email.toLowerCase(),
 //         phone: contactDetail.phone,
-//         country: contactDetail.country
+//         country: contactDetail.country,
 //       },
 //       accountSetup: {
 //         accountType: accountSetup.accountType,
-//         transactionPinHash: pinHash
+//         transactionPinHash: pinHash,
 //       },
 //       security: {
 //         passwordHash,
-//         termsAcceptedAt: new Date()
-//       }
+//         termsAcceptedAt: new Date(),
+//       },
 //     });
 
-//     console.log("STEP 8: User created:", user._id);
+//     // -------------------- CREATE BANK ACCOUNT --------------------
+//     function generateAccountNumber() {
+//       return String(Math.floor(1000000000 + Math.random() * 9000000000)); // 10 digits
+//     }
 
+//     function generateAccountId() {
+//       return "UG-" + Date.now() + "-" + Math.floor(Math.random() * 99999);
+//     }
+
+//    await Account.create({
+//       user: user._id,  // ✅ correct
+//       accountNumber: generateAccountNumber(),
+//       accountId: generateAccountId(),
+
+//       balances: {
+//         usd: { available: 0, ledger: 0 },
+//         usdt: { available: 0, ledger: 0 },
+//         btc: { available: 0, ledger: 0 }
+//       },
+
+//       limits: {},
+//       analytics: {},
+//     });
+
+
+//     // -------------------- JWT TOKEN --------------------
 //     const token = generateToken({ userId: user._id });
 
-//     console.log("STEP 9: Sending response");
-//     res.status(201).json({
+//     return res.status(201).json({
 //       message: "Account created (pre-KYC).",
 //       token,
+//       needsVerification: true,
 //       user: {
 //         id: user._id,
 //         username: user.personalInfo.username,
 //         email: user.contactDetail.email,
-//         accountType: user.accountSetup.accountType
-//       }
+//         accountNumber: account.accountNumber, // return account number
+//         accountId: account.accountId,
+//         accountType: user.accountSetup.accountType,
+//       },
 //     });
 
 //   } catch (e) {
-//     console.log("🔥 STEP 10: ERROR IN TRY BLOCK:", e);
-//     res.status(500).json({ error: e.message });
+//     console.error("REGISTER ERROR:", e);
+//     return res.status(500).json({ error: e.message });
 //   }
 // };
 
@@ -163,19 +223,33 @@ export const login = async (req, res) => {
     const ok = await bcrypt.compare(password, user.security.passwordHash);
     if (!ok) return res.status(400).json({ error: "Invalid credentials" });
 
+
+    
+
     user.lastLoginAt = new Date();
     await user.save();
 
     const token = generateToken({ userId: user._id });
+    // res.json({
+    //   token,
+    //   user: {
+    //     id: user._id,
+    //     username: user.personalInfo.username,
+    //     email: user.contactDetail.email,
+    //     accountType: user.accountSetup.accountType
+    //   }
+    // });
     res.json({
-      token,
-      user: {
-        id: user._id,
-        username: user.personalInfo.username,
-        email: user.contactDetail.email,
-        accountType: user.accountSetup.accountType
-      }
-    });
+  token,
+  user: {
+    id: user._id,
+    username: user.personalInfo.username,
+    email: user.contactDetail.email,
+    accountType: user.accountSetup.accountType,
+    hasAcceptedTerms: user.hasAcceptedTerms,
+    kycCompleted: user.kycCompleted
+  }
+});
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

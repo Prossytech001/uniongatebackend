@@ -28,6 +28,7 @@ import rateLimit from "express-rate-limit";
 import { connectDB } from "./config/db.js";
 
 import authRoutes from "./routes/authRoutes.js";
+import userRoutes from "./routes/Users.js"
 
 dotenv.config();
 connectDB();
@@ -45,6 +46,17 @@ const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100 });
 app.use("/api/auth", authLimiter, authRoutes);
 
 app.get("/", (_req, res) => res.send("Backend is running..."));
+
+import kycRoutes from "./routes/kyc.js";
+app.use("/api/kyc", kycRoutes);
+
+import accountRoutes from "./routes/accountRoutes.js";
+
+app.use("/api/account", accountRoutes);
+
+
+app.use("/api/user", userRoutes);
+
 
 export default app;
 
