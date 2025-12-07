@@ -210,35 +210,92 @@
 //     throw err;
 //   }
 // };
-import nodemailer from "nodemailer";
+// import nodemailer from "nodemailer";
 
-export const sendEmail = async (to, subject, html) => {
+// export const sendEmail = async (to, subject, html) => {
+//   try {
+//     const transporter = nodemailer.createTransport({
+//       host: process.env.SMTP_HOST,
+//       port: 587,
+//       secure: false,
+//       auth: {
+//         user: process.env.SMTP_USER,      // support@priyonconcept.com
+//         pass: process.env.SMTP_PASS,      // your brevo SMTP key
+//       },
+//       tls: {
+//         rejectUnauthorized: false,
+//       }
+//     });
+
+//     const info = await transporter.sendMail({
+//       from: process.env.EMAIL_FROM,       // "UnionGate Bank <support@priyonconcept.com>"
+//       to,
+//       subject,
+//       html,
+//     });
+
+//     console.log("EMAIL SENT:", info);
+//     return info;
+
+//   } catch (err) {
+//     console.error("SMTP EMAIL ERROR:", err);
+//     throw err;
+//   }
+// };
+// import brevo from "@getbrevo/brevo";
+
+// export const sendEmail = async (to, subject, text, html) => {
+//   try {
+//     let apiInstance = new brevo.TransactionalEmailsApi();
+//     apiInstance.setApiKey(
+//       brevo.TransactionalEmailsApiApiKeys.apiKey,
+//       process.env.BREVO_API_KEY
+//     );
+
+//     const emailData = {
+//       sender: { name: "UnionGate Bank", email: "support@priyonconcept.com" },
+//       to: [{ email: to }],
+//       subject,
+//       textContent: text,
+//       htmlContent: html,
+//     };
+
+//     let response = await apiInstance.sendTransacEmail(emailData);
+//     console.log("EMAIL SENT:", response);
+//     return response;
+//   } catch (err) {
+//     console.error("BREVO API ERROR:", err);
+//     throw err;
+//   }
+// };
+import axios from "axios";
+
+export async function sendEmail(to, subject, html) {
   try {
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: 587,
-      secure: false,
-      auth: {
-        user: process.env.SMTP_USER,      // support@priyonconcept.com
-        pass: process.env.SMTP_PASS,      // your brevo SMTP key
+    const res = await axios.post(
+      "https://api.brevo.com/v3/smtp/email",
+      {
+        sender: {
+          name: "UnionGate Bank",
+          email: "support@priyonconcept.com",
+        },
+        to: [{ email: to }],
+        htmlContent: html,
+        subject,
       },
-      tls: {
-        rejectUnauthorized: false,
+      {
+        headers: {
+          "api-key": process.env.BREVO_API_KEY,
+          "Content-Type": "application/json",
+        },
+        timeout: 5000,
       }
-    });
+    );
 
-    const info = await transporter.sendMail({
-      from: process.env.EMAIL_FROM,       // "UnionGate Bank <support@priyonconcept.com>"
-      to,
-      subject,
-      html,
-    });
-
-    console.log("EMAIL SENT:", info);
-    return info;
-
+    console.log("BREVO SENT:", res.data);
+    return true;
   } catch (err) {
-    console.error("SMTP EMAIL ERROR:", err);
+    console.error("BREVO API ERROR:", err);
     throw err;
   }
-};
+}
