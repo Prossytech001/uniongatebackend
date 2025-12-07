@@ -37,6 +37,15 @@ const app = express();
 
 app.use(helmet());
 app.use(cors({ origin: true, credentials: true }));
+app.use(
+  express.json({
+    verify: (req, _res, buf) => {
+      if (req.originalUrl?.includes("/api/deposit/ipn")) {
+        req.rawBody = buf.toString("utf8");
+      }
+    },
+  })
+);
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -69,10 +78,14 @@ app.use("/api/profile", profileRoutes);
 import depositRoutes from "./routes/depositRoutes.js"
 app.use("/api/deposit", depositRoutes);
 
+import transaction from "./routes/transactions.js"
+app.use("/api/transactions", transaction)
+
 
 
 
 app.use("/api/user", userRoutes);
+console.log("RESEND KEY:", process.env.RESEND_API_KEY);
 
 
 export default app;

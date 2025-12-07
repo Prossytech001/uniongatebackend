@@ -43,7 +43,7 @@
 //     res.status(500).json({ error: e.message });
 //   }
 // };
-import Deposit from "../models/Deposit.js";
+import Deposit from "../models/Payment.js";
 import Account from "../models/Account.js";
 
 export const nowpaymentsWebhook = async (req, res) => {

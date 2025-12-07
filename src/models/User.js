@@ -210,6 +210,8 @@ const UserSchema = new mongoose.Schema({
   kycTermsAccepted: { type: Boolean, default: false },
   hasAcceptedTerms: { type: Boolean, default: false },
   kycCompleted: { type: Boolean, default: false },
+  emailVerifyToken: String,
+  emailVerifyExpires: Date,
 
 avatarUrl: { type: String, default: null },     // public URL served to client
   avatarKey: { type: String, default: null },     // local filename (or cloud key)
