@@ -46,12 +46,53 @@ export const acceptKycTerms = async (req, res) => {
 };
 
 
+// export const getMeSidebar = async (req, res) => {
+//   try {
+//     const userId = req.user.userId;
+
+//     const user = await User.findById(userId).select("personalInfo kyc");
+//     const account = await Account.findOne({ user: userId })
+//   .select("accountNumber balances");
+
+
+//     if (!user) {
+//       return res.status(404).json({ error: "User not found" });
+//     }
+
+//     const fullName = `${user.personalInfo.legalFirstName} ${
+//       user.personalInfo.middleName || ""
+//     } ${user.personalInfo.legalLastName}`.trim();
+
+//     const initials = fullName
+//       .split(" ")
+//       .map((n) => n[0])
+//       .join("")
+//       .toUpperCase();
+
+//     return res.json({
+//       fullName,
+//       initials,
+//       accountNumber: account?.accountNumber || null,
+//       balance: account?.balances?.usd?.available || 0,
+//      kycCompleted: user?.kycCompleted || false,
+
+
+//     });
+
+//   } catch (e) {
+//     console.log("GET SIDEBAR ERROR:", e);
+//     return res.status(500).json({ error: e.message });
+//   }
+// };
 export const getMeSidebar = async (req, res) => {
   try {
     const userId = req.user.userId;
 
-    const user = await User.findById(userId).select("personalInfo kyc");
-    const account = await Account.findOne({ user: userId }).select("accountNumber");
+    const user = await User.findById(userId)
+      .select("personalInfo kycCompleted kyc");
+
+    const account = await Account.findOne({ user: userId })
+      .select("accountNumber balances");
 
     if (!user) {
       return res.status(404).json({ error: "User not found" });
@@ -72,7 +113,9 @@ export const getMeSidebar = async (req, res) => {
       initials,
       accountNumber: account?.accountNumber || null,
       balance: account?.balances?.usd?.available || 0,
-      kycCompleted: user.kyc?.status?.approved || false,
+
+      // FIXED
+      kycCompleted: user.kycCompleted === true,
     });
 
   } catch (e) {

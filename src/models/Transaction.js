@@ -52,13 +52,40 @@
 // TransactionSchema.index({ idempotencyKey: 1, "sender.user": 1 }, { sparse: true });
 
 // export default mongoose.model("Transaction", TransactionSchema);
+// import mongoose from "mongoose";
+
+// const TransactionSchema = new mongoose.Schema(
+//   {
+//     user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+//     type: { type: String, enum: ["deposit", "transfer", "card"], required: true },
+//     direction: { type: String, enum: ["credit", "debit"], required: true },
+//     amount: { type: Number, required: true },
+
+//     status: {
+//       type: String,
+//       enum: ["success", "pending", "failed"],
+//       default: "pending",
+//     },
+    
+//     description: { type: String },
+//   },
+//   { timestamps: true }
+// );
+
+// export default mongoose.model("Transaction", TransactionSchema);
 import mongoose from "mongoose";
 
 const TransactionSchema = new mongoose.Schema(
   {
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-    type: { type: String, enum: ["deposit", "transfer", "card"], required: true },
+
+    type: {
+  type: String,
+  enum: ["deposit", "withdrawal", "transfer", "card", "custom"],
+  required: true,
+},
     direction: { type: String, enum: ["credit", "debit"], required: true },
+
     amount: { type: Number, required: true },
 
     status: {
@@ -68,8 +95,16 @@ const TransactionSchema = new mongoose.Schema(
     },
 
     description: { type: String },
+
+    reference: {
+      type: String,
+      unique: true,
+      required: true,
+    },
   },
   { timestamps: true }
 );
+export default mongoose.model("Transaction", TransactionSchema); 
 
-export default mongoose.model("Transaction", TransactionSchema);
+
+

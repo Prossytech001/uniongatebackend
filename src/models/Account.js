@@ -58,10 +58,10 @@ const BalanceSchema = new mongoose.Schema(
 
 const LimitSchema = new mongoose.Schema(
   {
-    dailyTransferLimit: { type: Number, default: 5000 },
-    monthlyTransferLimit: { type: Number, default: 30000 },
-    dailyWithdrawalLimit: { type: Number, default: 2000 },
-    maxSingleTransaction: { type: Number, default: 5000 },
+    dailyTransferLimit: { type: Number, default: 200000 },
+    monthlyTransferLimit: { type: Number, default: 3000000 },
+    dailyWithdrawalLimit: { type: Number, default: 100000 },
+    maxSingleTransaction: { type: Number, default: 10000 },
   },
   { _id: false }
 );

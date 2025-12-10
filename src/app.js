@@ -34,6 +34,8 @@ dotenv.config();
 connectDB();
 
 const app = express();
+;
+
 
 app.use(helmet());
 app.use(cors({ origin: true, credentials: true }));
@@ -82,10 +84,45 @@ import transaction from "./routes/transactions.js"
 app.use("/api/transactions", transaction)
 
 
+import auth from "./routes/auth.js"
+app.use("/api/auth", auth)
+
+
 
 
 app.use("/api/user", userRoutes);
 console.log("RESEND KEY:", process.env.RESEND_API_KEY);
+
+
+
+// admin route
+import adminAuthRoutes from "./routes/adminAuth.js";
+
+app.use("/api/admin/auth", adminAuthRoutes);
+
+
+// backend/server.js
+import adminUserCrudRoutes from "./routes/adminUserCrud.js";
+app.use("/api/admin/user", adminUserCrudRoutes);
+
+
+import adminDashboardRoutes from "./routes/adminDashboardRoutes.js"
+app.use("/api/admin", adminDashboardRoutes);
+
+
+import adminTransactions from "./routes/adminTransactions.js";
+app.use("/api/admin", adminTransactions);
+
+
+import adminSettingsRoutes from "./routes/adminSettings.js";
+
+app.use("/api/admin/settings", adminSettingsRoutes);
+
+
+
+
+
+
 
 
 export default app;
