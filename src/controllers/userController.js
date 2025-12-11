@@ -89,7 +89,7 @@ export const getMeSidebar = async (req, res) => {
     const userId = req.user.userId;
 
     const user = await User.findById(userId)
-      .select("personalInfo kycCompleted kyc");
+      .select("personalInfo kycCompleted kyc profileImage");
 
     const account = await Account.findOne({ user: userId })
       .select("accountNumber balances");
@@ -111,6 +111,7 @@ export const getMeSidebar = async (req, res) => {
     return res.json({
       fullName,
       initials,
+      profileImage: user.profileImage || null,
       accountNumber: account?.accountNumber || null,
       balance: account?.balances?.usd?.available || 0,
 

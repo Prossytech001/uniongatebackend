@@ -214,7 +214,12 @@ const UserSchema = new mongoose.Schema({
   emailVerifyExpires: Date,
 
 avatarUrl: { type: String, default: null },     // public URL served to client
-  avatarKey: { type: String, default: null },     // local filename (or cloud key)
+  avatarKey: { type: String, default: null }, 
+  profileImage: {
+  type: String,
+  default: null, // Cloudinary URL
+},
+    // local filename (or cloud key)
   // ...
 
 

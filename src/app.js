@@ -88,6 +88,12 @@ import auth from "./routes/auth.js"
 app.use("/api/auth", auth)
 
 
+import userProfileRoutes from "./routes/userProfile.js";
+
+app.use("/api/user", userProfileRoutes);
+
+
+
 
 
 app.use("/api/user", userRoutes);
