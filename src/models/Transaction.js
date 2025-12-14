@@ -101,6 +101,10 @@ const TransactionSchema = new mongoose.Schema(
       unique: true,
       required: true,
     },
+    transactionDate: {
+      type: Date,
+      default: Date.now,
+    },
   },
   { timestamps: true }
 );
