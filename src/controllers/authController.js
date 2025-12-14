@@ -536,7 +536,7 @@ export const registerStep3 = async (req, res) => {
 
   } catch (e) {
     console.log("STEP 3 ERROR:", e);
-    return res.status(400).json({ error: "Session expired. Restart signup." });
+    return res.status(400).json({ error: "please go back and fill up all the details" });
   }
 };
 
@@ -652,7 +652,7 @@ export const completeRegistration = async (req, res) => {
     });
 
   } catch (e) {
-    res.status(400).json({ error: "Session expired. Restart signup." });
+    res.status(400).json({ error: "please go back and fill up all the details" });
   }
 };
 // export const register = async (req, res) => {
