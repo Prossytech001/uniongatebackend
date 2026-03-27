@@ -85,7 +85,7 @@ const TransactionSchema = new mongoose.Schema(
   required: true,
 },
     direction: { type: String, enum: ["credit", "debit"], required: true },
-
+groupId: { type: String },
     amount: { type: Number, required: true },
 
     status: {
